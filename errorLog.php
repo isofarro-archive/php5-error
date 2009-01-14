@@ -1,5 +1,11 @@
 <?php
 
+define('LOG_LEVEL_INFO',   1);
+define('LOG_LEVEL_DEBUG',  2);
+define('LOG_LEVEL_WARN',   4);
+define('LOG_LEVEL_ERROR',  8);
+define('LOG_LEVEL_FATAL', 16);
+
 interface ErrorLogStore {
 	public function load();
 	public function save();
@@ -93,14 +99,18 @@ class ErrorMsg {
 	}
 	
 	public function __toString() {
-		return $this->level . " [" . date('c', $this->time) . "] " . $this->msg;
+		return $this->level . " [" . date('c', $this->time) . "] 	" . $this->msg;
 	}
 }
 
 class ErrorLog {
-	protected $log = array();
+	protected $log       = array();
+	protected $logBuffer = array();
+	protected $logLevel  = 0;
+
 	protected $logger;
 	
+
 	public function __construct($config=false) {
 		if ($config) {
 			$this->setLogger($config);
@@ -113,28 +123,43 @@ class ErrorLog {
 	
 	public function setLogger($config) {
 		$this->initLogger($config);
+		if (!empty($this->logBuffer)) {
+			foreach($this->logBuffer as $logMsg) {
+				$this->logger->add($logMsg);
+			}
+		}
+	}
+	
+	public function setLogLevel($level) {
+	
 	}
 	
 	public function info($msg) {
-		$this->log('INFO', $msg);
+		$this->log(LOG_LEVEL_INFO, $msg);
 	}
 
 	public function debug($msg) {
-		$this->log('DEBUG', $msg);
+		$this->log(LOG_LEVEL_DEBUG, $msg);
 	}
 
 	public function warn($msg) {
-		$this->log('WARN', $msg);
+		$this->log(LOG_LEVEL_WARN, $msg);
 	}
 
 	public function error($msg) {
-		$this->log('ERROR', $msg);
+		$this->log(LOG_LEVEL_ERROR, $msg);
+	}
+
+	public function fatal($msg) {
+		$this->log(LOG_LEVEL_FATAL, $msg);
 	}
 
 	public function log($level, $msg) {
 		$logMsg = new ErrorMsg($level, $msg);
+		$this->log[] = $logMsg;
+
 		if(empty($this->logger)) {
-			$this->log[] = $logMsg;
+			$this->logBuffer[] = $logMsg;
 		} else {
 			$this->logger->add($logMsg);
 		}
@@ -148,7 +173,7 @@ class ErrorLog {
 				$this->logger = $logger;
 				return true;
 			} else {
-			
+				echo "ERROR: $logClass doesn't implement ErrorLogStore\n"; 
 			}
 		}
 		return false;

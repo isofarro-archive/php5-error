@@ -5,7 +5,7 @@ require_once 'errorLog.php';
 $LOG->setLogger(
 		array(
 			'logger' => 'FileErrorLog',
-			'file'   => 'log.messages.txt'
+			'file'   => '/home/user/tmp/error-messages.txt'
 		)
 	);
 
