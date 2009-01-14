@@ -131,7 +131,11 @@ class ErrorLog {
 	}
 	
 	public function setLogLevel($level) {
-	
+		if (is_int($level)) {
+			$this->logLevel = $level;
+		} else {
+			echo "ERROR: Log Level not a defined log level\n";
+		}
 	}
 	
 	public function info($msg) {
@@ -155,13 +159,39 @@ class ErrorLog {
 	}
 
 	public function log($level, $msg) {
-		$logMsg = new ErrorMsg($level, $msg);
-		$this->log[] = $logMsg;
+		if ($level >= $this->logLevel) {
+			$levelKey = $this->getLevelText($level);
+			$logMsg = new ErrorMsg($levelKey, $msg);
+			$this->log[] = $logMsg;
 
-		if(empty($this->logger)) {
-			$this->logBuffer[] = $logMsg;
-		} else {
-			$this->logger->add($logMsg);
+			if(empty($this->logger)) {
+				$this->logBuffer[] = $logMsg;
+			} else {
+				$this->logger->add($logMsg);
+			}
+		}
+	}
+	
+	protected function getLevelText($level) {
+		switch($level) {
+			case LOG_LEVEL_INFO:
+				return 'INFO';
+				break;
+			case LOG_LEVEL_DEBUG:
+				return 'DEBUG';
+				break;
+			case LOG_LEVEL_WARN:
+				return 'WARN';
+				break;
+			case LOG_LEVEL_ERROR:
+				return 'ERROR';
+				break;
+			case LOG_LEVEL_FATAL:
+				return 'FATAL';
+				break;
+			default:
+				return '----';
+				break;
 		}
 	}
 	

@@ -9,8 +9,13 @@ $LOG->setLogger(
 		)
 	);
 
+$LOG->setLogLevel(LOG_LEVEL_WARN);
 
 $LOG->info('Initialising first message');
+$LOG->debug('A debug message');
+$LOG->warn('A warning message');
+$LOG->error('An error message');
+$LOG->fatal('A FATAL message');
 
 
 //print_r($LOG);
