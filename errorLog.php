@@ -151,7 +151,7 @@ class ErrorLog {
 	}
 
 	public function fatal($msg) {
-		$this->log(LOG_LEVEL_FATAL, $msg);
+		$this->log(LOG_LEVEL_FATAL,	 $msg);
 	}
 
 	public function log($level, $msg) {
