@@ -2,15 +2,17 @@
 
 require_once 'errorLog.php';
 
-$LOG->info('Initialising first message');
-
 $LOG->setLogger(
-		(object)array(
+		array(
 			'logger' => 'FileErrorLog',
-			'file'   => 'errorLog.output.txt'
+			'file'   => 'log.messages.txt'
 		)
 	);
 
-print_r($LOG);
+
+$LOG->info('Initialising first message');
+
+
+//print_r($LOG);
 
 ?>

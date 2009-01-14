@@ -32,13 +32,26 @@ class FileErrorLog implements ErrorLogStore {
 	
 	public function save() {
 		$fileName = $this->getFilename();
-		if ($this->getFilename) {
-		
-		}	
+		if ($fileName) {
+			$fileHandle = fopen($fileName, 'a');
+			if ($fileHandle) {
+				$buffer = $this->writeLogMessages();
+				//echo $buffer;
+				$isDone = fwrite($fileHandle, $buffer);
+				if (!$isDone) {
+					echo "ERROR: write log messages to $fileName failed.\n";
+				}
+				fclose($fileHandle);
+			}  else {
+				echo "ERROR: Can't get filehandle: $fileName\n";
+			}
+		} else {
+			echo "ERROR: No log file specified.\n";
+		}
 	}
 	
 	public function add($logMsg) {
-	
+		$this->log[] = $logMsg;	
 	}
 
 	protected function initLogger($config) {
@@ -46,11 +59,24 @@ class FileErrorLog implements ErrorLogStore {
 	}
 	
 	protected function getFilename() {
-		if (!empty($config->file)) {
-			// TODO: Check the directory is writeable
-
-			return $config->file;
+		if (!empty($this->config['file'])) {
+			$dirname = dirname($this->config['file']);
+			//echo "DEBUG: dirname: $dirname\n";
+			if (is_writable($dirname)) {
+				return $this->config['file'];
+			} else {
+				echo "ERROR: Directory is not writable!\n";
+			}
 		}
+	}
+	
+	protected function writeLogMessages() {
+		$buffer = array();
+		//echo count($this->log), " messages to save\n";
+		foreach($this->log as $msg) {
+			$buffer[] = $msg->__toString();
+		}
+		return implode("\n", $buffer) . "\n";
 	}
 }
 
@@ -67,7 +93,7 @@ class ErrorMsg {
 	}
 	
 	public function __toString() {
-		return $this->level . '[' . date('c', $this->time) . '] ' . $this->msg;
+		return $this->level . " [" . date('c', $this->time) . "] " . $this->msg;
 	}
 }
 
@@ -107,16 +133,22 @@ class ErrorLog {
 
 	public function log($level, $msg) {
 		$logMsg = new ErrorMsg($level, $msg);
-		$this->log[] = $logMsg;
+		if(empty($this->logger)) {
+			$this->log[] = $logMsg;
+		} else {
+			$this->logger->add($logMsg);
+		}
 	}
 	
 	protected function initLogger($config) {
-		if (!empty($config->logger)) {
-			$logClass = $config->logger;
+		if (!empty($config['logger'])) {
+			$logClass = $config['logger'];
 			$logger   = new $logClass($config);
-			if (is_a('ErrorLogStore', $logger)) {
+			if (is_a($logger, 'ErrorLogStore')) {
 				$this->logger = $logger;
 				return true;
+			} else {
+			
 			}
 		}
 		return false;
@@ -130,9 +162,11 @@ class ErrorLog {
 	}
 
 	protected function save() {
-		echo "LOG->save()\n";
+		//echo "LOG->save()\n";
 		if (!empty($this->logger)) {
 			$this->logger->save($this->log);
+		} else {
+			echo "ERROR: No logger defined\n";		
 		}
 	}
 }
