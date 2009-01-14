@@ -6,9 +6,11 @@ define('LOG_LEVEL_WARN',   4);
 define('LOG_LEVEL_ERROR',  8);
 define('LOG_LEVEL_FATAL', 16);
 
+
 interface ErrorLogStore {
 	public function load();
 	public function save();
+	public function clear();
 	public function add($logMsg);
 }
 
@@ -39,7 +41,8 @@ class FileErrorLog implements ErrorLogStore {
 	public function save() {
 		$fileName = $this->getFilename();
 		if ($fileName) {
-			$fileHandle = fopen($fileName, 'a');
+			$mode = $this->getLogMode();
+			$fileHandle = fopen($fileName, $mode);
 			if ($fileHandle) {
 				$buffer = $this->writeLogMessages();
 				//echo $buffer;
@@ -56,12 +59,30 @@ class FileErrorLog implements ErrorLogStore {
 		}
 	}
 	
+	public function clear() {
+		// Clear down the array
+		$this->log = array();
+		
+		// Clear down the file
+		file_put_contents($this->config['file'], '');
+	}
+	
 	public function add($logMsg) {
 		$this->log[] = $logMsg;	
 	}
 
 	protected function initLogger($config) {
 	
+	}
+
+	protected function getLogMode() {
+		$mode ='a';
+		if (!empty($this->config['append'])) {
+			if ($this->config['append']=='false') {
+				$mode = 'w';
+			}
+		}
+		return $mode;	
 	}
 	
 	protected function getFilename() {
@@ -135,6 +156,12 @@ class ErrorLog {
 			$this->logLevel = $level;
 		} else {
 			echo "ERROR: Log Level not a defined log level\n";
+		}
+	}
+	
+	public function clearLogs() {
+		if (!empty($this->logger)) {
+			$this->logger->clear();
 		}
 	}
 	
