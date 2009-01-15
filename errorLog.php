@@ -101,7 +101,7 @@ class FileErrorLog implements ErrorLogStore {
 	
 	protected function writeLogMessages() {
 		$buffer = array();
-		//log_debug(count($this->log). " messages to save");
+		//		log_debug(count($this->log). " messages to save");
 		foreach($this->log as $msg) {
 			$buffer[] = $msg->__toString();
 		}
