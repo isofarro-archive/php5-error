@@ -48,14 +48,16 @@ class FileErrorLog implements ErrorLogStore {
 				//echo $buffer;
 				$isDone = fwrite($fileHandle, $buffer);
 				if (!$isDone) {
-					echo "ERROR: write log messages to $fileName failed.\n";
+					log_error(
+						"Writing log messages to $fileName failed.", true
+					);
 				}
 				fclose($fileHandle);
 			}  else {
-				echo "ERROR: Can't get filehandle: $fileName\n";
+				log_error("Can't get filehandle: $fileName", true);
 			}
 		} else {
-			echo "ERROR: No log file specified.\n";
+			log_error("No log file specified.", true);
 		}
 	}
 	
@@ -88,18 +90,18 @@ class FileErrorLog implements ErrorLogStore {
 	protected function getFilename() {
 		if (!empty($this->config['file'])) {
 			$dirname = dirname($this->config['file']);
-			//echo "DEBUG: dirname: $dirname\n";
+			//log_debug("dirname: $dirname");
 			if (is_writable($dirname)) {
 				return $this->config['file'];
 			} else {
-				echo "ERROR: Directory is not writable!\n";
+				log_error("Directory $dirname is not writable!");
 			}
 		}
 	}
 	
 	protected function writeLogMessages() {
 		$buffer = array();
-		//echo count($this->log), " messages to save\n";
+		//log_debug(count($this->log). " messages to save");
 		foreach($this->log as $msg) {
 			$buffer[] = $msg->__toString();
 		}
@@ -128,6 +130,7 @@ class ErrorLog {
 	protected $log       = array();
 	protected $logBuffer = array();
 	protected $logLevel  = 0;
+	protected $toScreen  = false;
 
 	protected $logger;
 	
@@ -155,7 +158,17 @@ class ErrorLog {
 		if (is_int($level)) {
 			$this->logLevel = $level;
 		} else {
-			echo "ERROR: Log Level not a defined log level\n";
+			$this->warn("Log Level not a defined log level");
+		}
+	}
+	
+	public function setToScreen($toScreen) {
+		if (is_bool($toScreen)) {
+			$this->toScreen = $toScreen;
+		} elseif ($toScreen=='true') {
+			$this->toScreen = true;
+		} elseif ($toScreen=='false') {
+			$this->toScreen = false;
 		}
 	}
 	
@@ -165,27 +178,27 @@ class ErrorLog {
 		}
 	}
 	
-	public function info($msg) {
-		$this->log(LOG_LEVEL_INFO, $msg);
+	public function info($msg, $toScreen=false) {
+		$this->log(LOG_LEVEL_INFO, $msg, $toScreen);
 	}
 
-	public function debug($msg) {
-		$this->log(LOG_LEVEL_DEBUG, $msg);
+	public function debug($msg, $toScreen=false) {
+		$this->log(LOG_LEVEL_DEBUG, $msg, $toScreen);
 	}
 
-	public function warn($msg) {
-		$this->log(LOG_LEVEL_WARN, $msg);
+	public function warn($msg, $toScreen=false) {
+		$this->log(LOG_LEVEL_WARN, $msg, $toScreen);
 	}
 
-	public function error($msg) {
-		$this->log(LOG_LEVEL_ERROR, $msg);
+	public function error($msg, $toScreen=false) {
+		$this->log(LOG_LEVEL_ERROR, $msg, $toScreen);
 	}
 
-	public function fatal($msg) {
-		$this->log(LOG_LEVEL_FATAL,	 $msg);
+	public function fatal($msg, $toScreen=false) {
+		$this->log(LOG_LEVEL_FATAL, $msg, $toScreen);
 	}
 
-	public function log($level, $msg) {
+	public function log($level, $msg, $toScreen=false) {
 		if ($level >= $this->logLevel) {
 			$levelKey = $this->getLevelText($level);
 			$logMsg = new ErrorMsg($levelKey, $msg);
@@ -195,6 +208,11 @@ class ErrorLog {
 				$this->logBuffer[] = $logMsg;
 			} else {
 				$this->logger->add($logMsg);
+			}
+
+			// Check whether we need to send this message to the screen
+			if ($this->toScreen || $toScreen) {
+				echo $logMsg->__toString(), "\n";
 			}
 		}
 	}
@@ -223,6 +241,15 @@ class ErrorLog {
 	}
 	
 	protected function initLogger($config) {
+		// Check for any logging level options
+		if (!empty($config['log_level'])) {
+			$this->setLogLevel($config['log_level']);
+		}	
+	
+		if (!empty($config['to_screen'])) {
+			$this->setToScreen($config['to_screen']);
+		}	
+
 		if (!empty($config['logger'])) {
 			$logClass = $config['logger'];
 			$logger   = new $logClass($config);
@@ -230,14 +257,14 @@ class ErrorLog {
 				$this->logger = $logger;
 				return true;
 			} else {
-				echo "ERROR: $logClass doesn't implement ErrorLogStore\n"; 
+				$this->error($logClass . " doesn't implement ErrorLogStore", true); 
 			}
 		}
 		return false;
 	}
 
 	protected function load() {
-		echo "LOG->load()\n";
+		$this->debug("LOG->load()");
 		if (!empty($this->logger)) {
 			$this->log = $this->logger->load();
 		}
@@ -248,7 +275,7 @@ class ErrorLog {
 		if (!empty($this->logger)) {
 			$this->logger->save($this->log);
 		} else {
-			echo "ERROR: No logger defined\n";		
+			$this->error("No logger defined", true);		
 		}
 	}
 }
@@ -257,5 +284,46 @@ global $LOG;
 if (empty($LOG)) {
 	$LOG = new ErrorLog();
 }
+
+function log_info($msg, $toScreen=false) {
+	global $LOG;
+	$LOG->info($msg);
+}
+
+function log_debug($msg, $toScreen=false) {
+	global $LOG;
+	$LOG->debug($msg);
+}
+
+function log_warn($msg, $toScreen=false) {
+	global $LOG;
+	$LOG->warn($msg);
+}
+
+function log_error($msg, $toScreen=false) {
+	global $LOG;
+	$LOG->error($msg);
+}
+
+function log_fatal($msg, $toScreen=false) {
+	global $LOG;
+	$LOG->fatal($msg);
+}
+
+function log_configure($config) {
+	global $LOG;
+	$LOG->setLogger($config);
+}
+
+function log_set_log_level($level) {
+	global $LOG;
+	$LOG->setLogLevel($level);
+}
+
+function log_send_to_screen($toScreen) {
+	global $LOG;
+	$LOG->setToScreen($toScreen);
+}
+
 
 ?>
