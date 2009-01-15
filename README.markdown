@@ -12,7 +12,7 @@ Usage:
 ------
 
 	// This is all that's needed to start logging messages.
-	require_once('errorLog.php');
+	require_once 'errorLog.php';
 
 There are five levels of logging, each with its own function
 (in order of severity):
