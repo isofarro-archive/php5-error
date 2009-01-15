@@ -122,7 +122,7 @@ class ErrorMsg {
 	}
 	
 	public function __toString() {
-		return $this->level . " [" . date('c', $this->time) . "] 	" . $this->msg;
+		return $this->level . " [" . date('c', $this->time) . "] " . $this->msg;
 	}
 }
 
@@ -178,27 +178,31 @@ class ErrorLog {
 		}
 	}
 	
-	public function info($msg, $toScreen=false) {
+	public function info($msg, $toScreen=NULL) {
 		$this->log(LOG_LEVEL_INFO, $msg, $toScreen);
 	}
 
-	public function debug($msg, $toScreen=false) {
+	public function debug($msg, $toScreen=NULL) {
 		$this->log(LOG_LEVEL_DEBUG, $msg, $toScreen);
 	}
 
-	public function warn($msg, $toScreen=false) {
+	public function warn($msg, $toScreen=NULL) {
 		$this->log(LOG_LEVEL_WARN, $msg, $toScreen);
 	}
 
-	public function error($msg, $toScreen=false) {
+	public function error($msg, $toScreen=NULL) {
 		$this->log(LOG_LEVEL_ERROR, $msg, $toScreen);
 	}
 
-	public function fatal($msg, $toScreen=false) {
+	public function fatal($msg, $toScreen=NULL) {
 		$this->log(LOG_LEVEL_FATAL, $msg, $toScreen);
 	}
 
-	public function log($level, $msg, $toScreen=false) {
+	public function log($level, $msg, $toScreen=NULL) {
+		if(is_null($toScreen)) {
+			$toScreen = $this->toScreen;
+		}
+		
 		if ($level >= $this->logLevel) {
 			$levelKey = $this->getLevelText($level);
 			$logMsg = new ErrorMsg($levelKey, $msg);
@@ -211,7 +215,7 @@ class ErrorLog {
 			}
 
 			// Check whether we need to send this message to the screen
-			if ($this->toScreen || $toScreen) {
+			if ($toScreen) {
 				echo $logMsg->__toString(), "\n";
 			}
 		}
@@ -285,35 +289,35 @@ if (empty($LOG)) {
 	$LOG = new ErrorLog();
 }
 
-function log_info($msg, $toScreen=false) {
+function log_info($msg, $toScreen=NULL) {
 	global $LOG;
-	$LOG->info($msg);
+	$LOG->info($msg, $toScreen);
 }
 
-function log_debug($msg, $toScreen=false) {
+function log_debug($msg, $toScreen=NULL) {
 	global $LOG;
-	$LOG->debug($msg);
+	$LOG->debug($msg, $toScreen);
 }
 
-function log_warn($msg, $toScreen=false) {
+function log_warn($msg, $toScreen=NULL) {
 	global $LOG;
-	$LOG->warn($msg);
+	$LOG->warn($msg, $toScreen);
 }
 
-function log_error($msg, $toScreen=false) {
+function log_error($msg, $toScreen=NULL) {
 	global $LOG;
-	$LOG->error($msg);
+	$LOG->error($msg, $toScreen);
 }
 
 function log_fatal($msg, $toScreen=false) {
 	global $LOG;
-	$LOG->fatal($msg);
+	$LOG->fatal($msg, $toScreen);
 }
 
 function log_configure($config) {
 	global $LOG;
 	$LOG->setLogger($config);
-}
+}	
 
 function log_set_log_level($level) {
 	global $LOG;

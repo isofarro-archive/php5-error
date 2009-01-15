@@ -22,8 +22,8 @@ log_set_log_level(LOG_LEVEL_WARN);
 
 // Override whether to send log messages to the screen
 $LOG->setToScreen(true);
-// or
-log_send_to_screen(true);
+// alternative, setting messages not to be logged:
+log_send_to_screen(false);
 
 // Using the global logging file
 $LOG->info('Initialising first message');
@@ -39,6 +39,7 @@ log_warn("A second warn message");
 log_error("A second error message");
 log_fatal("A second FATAL message");
 
+log_warn("A message that also displays on the output", true);
 
 //print_r($LOG);
 

@@ -23,6 +23,10 @@ There are five levels of logging, each with its own function
 * `log_warn('This is a warning message');`
 * `log_fatal('This is a fatal message');`
 
+Each of these logging functions takes an optional second parameter
+specifying whether to display this message in the standard output or not.
+Setting the parameter to `true` will show that message.
+
 We can set a minimum level of logging, for example logging only messages
 that are warnings or above. Each level of logging has a defined constant,
 (in order of severity):
