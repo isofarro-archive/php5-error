@@ -49,15 +49,22 @@ class FileErrorLog implements ErrorLogStore {
 				$isDone = fwrite($fileHandle, $buffer);
 				if (!$isDone) {
 					log_error(
-						"Writing log messages to $fileName failed.", true
+						"Writing log messages to $fileName failed.", true, 
+						'FileErrorLog->save()'
 					);
 				}
 				fclose($fileHandle);
 			}  else {
-				log_error("Can't get filehandle: $fileName", true);
+				log_error(
+					"Can't get filehandle: $fileName", true,
+					'FileErrorLog->save()'
+				);
 			}
 		} else {
-			log_error("No log file specified.", true);
+			log_error(
+				"No log file specified.", true,
+				'FileErrorLog->save()'			
+			);
 		}
 	}
 	
@@ -94,7 +101,10 @@ class FileErrorLog implements ErrorLogStore {
 			if (is_writable($dirname)) {
 				return $this->config['file'];
 			} else {
-				log_error("Directory $dirname is not writable!");
+				log_error(
+					"Directory $dirname is not writable!", NULL,
+					'FileErrorLog->getFilename()'
+				);
 			}
 		}
 	}
@@ -114,15 +124,23 @@ class ErrorMsg {
 	protected $level;
 	protected $msg;
 	protected $time;
+	protected $callee;
 	
-	function __construct($level, $msg) {
+	function __construct($level, $msg, $callee=NULL) {
 		$this->level = $level;
 		$this->msg   = $msg;
 		$this->time  = time();
+		
+		if (!is_null($callee)) {
+			$this->callee = $callee . ' ';
+		}
 	}
 	
 	public function __toString() {
-		return $this->level . " [" . date('c', $this->time) . "] " . $this->msg;
+		return $this->level . 
+			" [" . date('c', $this->time) . "] " .
+			$this->callee .  
+			$this->msg;
 	}
 }
 
@@ -158,7 +176,10 @@ class ErrorLog {
 		if (is_int($level)) {
 			$this->logLevel = $level;
 		} else {
-			$this->warn("Log Level not a defined log level");
+			$this->warn(
+				"Log Level not a defined log level", NULL,
+				'ErrorLog->setLogLevel()'			
+			);
 		}
 	}
 	
@@ -198,16 +219,26 @@ class ErrorLog {
 		$this->log(LOG_LEVEL_FATAL, $msg, $toScreen);
 	}
 
-	public function log($level, $msg, $toScreen=NULL) {
-		if(is_null($toScreen)) {
-			$toScreen = $this->toScreen;
-		}
-		
+	public function log($level, $msg, $toScreen=NULL, $callee=NULL) {
+			
 		if ($level >= $this->logLevel) {
+			// Decide whether to display this message to stdout
+			if(is_null($toScreen)) {
+				$toScreen = $this->toScreen;
+			}
+
+			// Find the callee if none provided
+			if (is_null($callee)) {
+				$callee = $this->getCallee();		
+			}
+
+			// Translate the level integer into text
 			$levelKey = $this->getLevelText($level);
-			$logMsg = new ErrorMsg($levelKey, $msg);
+			
+			$logMsg = new ErrorMsg($levelKey, $msg, $callee);
 			$this->log[] = $logMsg;
 
+			// If we don't have a logger, cache the log message
 			if(empty($this->logger)) {
 				$this->logBuffer[] = $logMsg;
 			} else {
@@ -261,14 +292,17 @@ class ErrorLog {
 				$this->logger = $logger;
 				return true;
 			} else {
-				$this->error($logClass . " doesn't implement ErrorLogStore", true); 
+				$this->error(
+					$logClass . " doesn't implement ErrorLogStore", true,
+					'ErrorLog->initLogger()'
+				); 
 			}
 		}
 		return false;
 	}
 
 	protected function load() {
-		$this->debug("LOG->load()");
+		$this->debug("LOG->load()", NULL, 'ErrorLog->load()');
 		if (!empty($this->logger)) {
 			$this->log = $this->logger->load();
 		}
@@ -279,8 +313,45 @@ class ErrorLog {
 		if (!empty($this->logger)) {
 			$this->logger->save($this->log);
 		} else {
-			$this->error("No logger defined", true);		
+			$this->error("No logger defined", true, 'ErrorLog->save()');		
 		}
+	}
+	
+	protected function getCallee() {
+		$stack = debug_backtrace();
+		//		print_r($stack);
+		foreach($stack as $row) {
+			$callee = '';
+			if (!empty($row['class'])) {
+			
+				// Skip callee if it is an ErrorLog one
+				// TODO: Replace static text with a classname($this) construct
+				if ($row['class']=='ErrorLog') {
+					continue;
+				}
+				$callee .= $row['class'] . '->';
+			} else {
+				// Skip function if it is an ErrorLog defined one
+				switch($row['function']) {
+					case 'log_info':
+					case 'log_debug':
+					case 'log_warn':
+					case 'log_error':
+					case 'log_fatal':
+					case 'log_configure':
+					case 'log_set_log_level':
+					case 'log_send_to_screen':
+						continue 2;
+						break;
+					default:
+						break;
+				}
+			}
+			$callee .= $row['function'] . '()';		
+		}
+		
+		// Nothing on the stack - its called from Main.
+		return 'MAIN::';
 	}
 }
 
