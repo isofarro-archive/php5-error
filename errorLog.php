@@ -152,6 +152,7 @@ class ErrorLog {
 
 	protected $logger;
 	
+	protected $scope     = array();
 	protected $callbacks = array();
 
 	public function __construct($config=false) {
@@ -180,9 +181,25 @@ class ErrorLog {
 		$this->callbacks[$log_level][] = $callback;
 	}
 		
-	public function setLogLevel($level) {
+	public function setLogLevel($level, $scope=NULL) {
 		if (is_int($level)) {
-			$this->logLevel = $level;
+			if (is_null($scope)) {
+				// Set the global logging level
+				$this->logLevel = $level;
+			} else {
+				// Set the class specific log level
+				if (is_string($scope)) {
+					$this->scope[$scope] = $level;
+				} elseif (is_object($scope)) {
+					// TODO: Get the class name of the supplied reference
+					$className = get_class($scope);
+					$this->scope[$className] = $level;
+					echo 'Setting ', $className, ' to ', $level, "\n";
+				} else {
+					echo "Scope is unknown\n"; print_r($scope);				
+				}
+			
+			}
 		} else {
 			$this->warn(
 				"Log Level not a defined log level", NULL,
@@ -237,7 +254,8 @@ class ErrorLog {
 
 			// Find the callee if none provided
 			if (is_null($callee)) {
-				$callee = $this->getCallee();		
+				//$callee = $this->getCallee();		
+				list($callee, $class, $method) = $this->getCallee();
 			}
 
 			// Translate the level integer into text
@@ -340,15 +358,18 @@ class ErrorLog {
 		$stack = debug_backtrace();
 		//		print_r($stack);
 		foreach($stack as $row) {
-			$callee = '';
-			if (!empty($row['class'])) {
+			$callee     = '';
+			$className  = NULL;
+			$methodName = NULL;
 			
+			if (!empty($row['class'])) {
 				// Skip callee if it is an ErrorLog one
 				// TODO: Replace static text with a classname($this) construct
 				if ($row['class']=='ErrorLog') {
 					continue;
 				}
-				$callee .= $row['class'] . '->';
+				$className = $row['class'];
+				$callee   .= $className . '->';
 			} else {
 				// Skip function if it is an ErrorLog defined one
 				switch($row['function']) {
@@ -366,11 +387,15 @@ class ErrorLog {
 						break;
 				}
 			}
-			$callee .= $row['function'] . '()';		
+			$methodName = $row['function'];
+			$callee    .= $methodName . '()';
+			
+			// Now that we've found the callee, return it
+			return array($callee, $className, $methodName);
 		}
 		
 		// Nothing on the stack - its called from Main.
-		return 'MAIN::';
+		return array('MAIN::', 'MAIN', NULL);
 	}
 }
 
@@ -409,9 +434,9 @@ function log_configure($config) {
 	$LOG->setLogger($config);
 }	
 
-function log_set_log_level($level) {
+function log_set_log_level($level, $scope=NULL) {
 	global $LOG;
-	$LOG->setLogLevel($level);
+	$LOG->setLogLevel($level, $scope);
 }
 
 function log_send_to_screen($toScreen) {
