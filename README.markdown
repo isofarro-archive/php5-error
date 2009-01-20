@@ -49,11 +49,16 @@ a configuration object:
 
 	log_configure($config);
 
+Completed Features:
+-------------------
+
+* Get the method/function name of the callee
 
 
 To-do Feature list:
 -------------------
 
-* Get the method/function name of the callee
-* Be able to specify log levels on a class basis
+* specify log levels on a class basis
+* register and trigger event-listeners by log level
+* unit testing
 
