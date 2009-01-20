@@ -152,6 +152,7 @@ class ErrorLog {
 
 	protected $logger;
 	
+	protected $callbacks = array();
 
 	public function __construct($config=false) {
 		if ($config) {
@@ -171,7 +172,14 @@ class ErrorLog {
 			}
 		}
 	}
-	
+
+	public function subscribe($log_level, $callback) {
+		if (!empty($this->callbacks[$log_level])) {
+			$this->callbacks[$log_level] = array();
+		}
+		$this->callbacks[$log_level][] = $callback;
+	}
+		
 	public function setLogLevel($level) {
 		if (is_int($level)) {
 			$this->logLevel = $level;
@@ -249,6 +257,16 @@ class ErrorLog {
 			if ($toScreen) {
 				echo $logMsg->__toString(), "\n";
 			}
+			
+			// Check if any listeners to this log level
+			if (!empty($this->callbacks[$level])) {
+				// Call each listener
+				foreach($this->callbacks[$level] as $callback) {
+					// TODO: Call the listener - check how I did this in the
+					// HTML SAX parser.
+					$this->debug("Callback " . $callback);
+				}
+			}			
 		}
 	}
 	
