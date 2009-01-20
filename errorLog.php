@@ -265,6 +265,7 @@ class ErrorLog {
 					// TODO: Call the listener - check how I did this in the
 					// HTML SAX parser.
 					$this->debug("Callback " . $callback);
+					
 				}
 			}			
 		}
