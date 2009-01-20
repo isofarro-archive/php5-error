@@ -194,7 +194,7 @@ class ErrorLog {
 					// TODO: Get the class name of the supplied reference
 					$className = get_class($scope);
 					$this->scope[$className] = $level;
-					echo 'Setting ', $className, ' to ', $level, "\n";
+					//echo 'Setting ', $className, ' to ', $level, "\n";
 				} else {
 					echo "Scope is unknown\n"; print_r($scope);				
 				}
