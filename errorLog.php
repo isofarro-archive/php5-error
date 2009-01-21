@@ -245,17 +245,28 @@ class ErrorLog {
 	}
 
 	public function log($level, $msg, $toScreen=NULL, $callee=NULL) {
+		// Find the callee if none provided
+		if (is_null($callee)) {
+			//$callee = $this->getCallee();		
+			list($callee, $class, $method) = $this->getCallee();
+		} else {
+			//TODO:: We have a callee passed - what does this mean??
+			$class = $method = 'TBD';
+		}
+		
+		$minLogLevel = $this->logLevel;
+		if ($class) {
+			if (!empty($this->scope[$class])) {
+				$minLogLevel = $this->scope[$class];
+				//echo "Class level logLevel: ", $minLogLevel, 
+				//	" (", $this->logLevel, ")\n";
+			}		
+		}
 			
-		if ($level >= $this->logLevel) {
+		if ($level >= $minLogLevel) {
 			// Decide whether to display this message to stdout
 			if(is_null($toScreen)) {
 				$toScreen = $this->toScreen;
-			}
-
-			// Find the callee if none provided
-			if (is_null($callee)) {
-				//$callee = $this->getCallee();		
-				list($callee, $class, $method) = $this->getCallee();
 			}
 
 			// Translate the level integer into text
