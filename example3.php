@@ -21,7 +21,7 @@ class EchoEcho {
 	public function addListeners() {
 		global $LOG;
 		$callback = array($this, 'echoLogMessages');
-		$LOG->subscribe(LOG_LEVEL_ERROR, $callback);
+		log_subscribe(LOG_LEVEL_ERROR, $callback);
 	}
 
 	public function echoLogMessages($logMsg) {

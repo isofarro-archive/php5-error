@@ -456,5 +456,10 @@ function log_send_to_screen($toScreen) {
 	$LOG->setToScreen($toScreen);
 }
 
+function log_subscribe($level, $callback) {
+	global $LOG;
+	$LOG->subscribe($level, $callback);	
+}
+
 
 ?>
