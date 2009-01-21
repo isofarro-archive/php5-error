@@ -53,12 +53,12 @@ Completed Features:
 -------------------
 
 * Get the method/function name of the callee
+* specify log levels on a class basis
 
 
 To-do Feature list:
 -------------------
 
-* specify log levels on a class basis
 * register and trigger event-listeners by log level
 * unit testing
 

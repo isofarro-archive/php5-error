@@ -254,6 +254,7 @@ class ErrorLog {
 			$class = $method = 'TBD';
 		}
 		
+		// Check whether there is a class override
 		$minLogLevel = $this->logLevel;
 		if ($class) {
 			if (!empty($this->scope[$class])) {
@@ -287,14 +288,14 @@ class ErrorLog {
 				echo $logMsg->__toString(), "\n";
 			}
 			
-			// Check if any listeners to this log level
+			// Call any listeners to this log level
+			// TODO: Decide whether the log level of the listener
+			// is the actual log level or the minimum log level.
 			if (!empty($this->callbacks[$level])) {
 				// Call each listener
 				foreach($this->callbacks[$level] as $callback) {
-					// TODO: Call the listener - check how I did this in the
-					// HTML SAX parser.
-					$this->debug("Callback " . $callback);
-					
+					//$this->debug("Callback " . $callback);
+					call_user_func($callback, $logMsg);
 				}
 			}			
 		}
