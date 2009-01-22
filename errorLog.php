@@ -135,6 +135,14 @@ class ErrorMsg {
 			$this->callee = $callee . ' ';
 		}
 	}
+
+	function getLevel() {
+		return $this->level;
+	}
+	
+	function getMessage() {
+		return $this->msg;
+	}
 	
 	public function __toString() {
 		return $this->level . 
