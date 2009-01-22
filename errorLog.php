@@ -183,10 +183,12 @@ class ErrorLog {
 	}
 
 	public function subscribe($log_level, $callback) {
-		if (!empty($this->callbacks[$log_level])) {
-			$this->callbacks[$log_level] = array();
+		if (is_callable($callback)) {
+			if (!empty($this->callbacks[$log_level])) {
+				$this->callbacks[$log_level] = array();
+			}
+			$this->callbacks[$log_level][] = $callback;
 		}
-		$this->callbacks[$log_level][] = $callback;
 	}
 		
 	public function setLogLevel($level, $scope=NULL) {
